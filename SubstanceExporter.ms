@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.0.0
+VERSION = 1.0.1
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -21,6 +21,10 @@ ICON=#("PhysX_Main", 30)
 
 * First release =
 
+[1.0.1]
+
++Added: Auto render UVW=
+
 [ABOUT]
 
 Quick export and check models for Substance Painter =
@@ -31,7 +35,7 @@ Quick export and check models for Substance Painter =
 */	
 
 try(closeRolloutFloater rSubstanceExporter)catch()
-global rSubstanceExporter = newRolloutFloater "Substance Exporter" 260 600
+global rSubstanceExporter = newRolloutFloater "Substance Exporter" 260 560
 
 global _MAIN_SUBSTANCE_STEP1
 global BitmapTypes = #(Bitmaptexture, CoronaBitmap)
@@ -619,10 +623,29 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	)
 	
 	fn renderUVW o = (
+	
+		f = getSaveFileName caption: "Save UVW Render" types:"JPG(*.jpg)|*.jpg|PNG(*.png)|*.png"
+		if(f == undefined) do return false
+	
 		if(canConvertTo o Editable_Poly) do convertToPoly o
 		u = UVWunwrap()
+		
+	
 		addModifier o u		
-		actionMan.executeAction 2077580866 "40194"
+		u.renderuv_width = 2048
+		u.renderuv_height = 2048
+		u.renderuv_fillColor = color 186 186 186
+		u.renderuv_fillalpha = 1.0
+		u.renderuv_fillmode = 1
+		u.renderuv_showoverlap = true
+		u.renderuv_edgeColor = color 255 255 255
+		u.renderuv_edgealpha = 1.0
+		u.renderuv_visibleedges = true
+		u.renderuv_invisibleedges = false
+		u.renderuv_seamedges = true
+		renderuv_showframebuffer = true
+	
+		u.renderUV f
 	)
 	
 	fn selectObjectsByMat o = (
