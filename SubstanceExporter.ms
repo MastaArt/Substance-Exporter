@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.0.1
+VERSION = 1.0.2
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -23,7 +23,14 @@ ICON=#("PhysX_Main", 30)
 
 [1.0.1]
 
-+Added: Auto render UVW=
++ Added: Auto render UVW=
+
+[1.1.0]
+
+-BugFix: Materials count in statistic=
+- BugFix: Fatal error when pressed button Triangles=
++ Added: Batch render UVW=
+* Changed: Small fixes=
 
 [ABOUT]
 
@@ -134,7 +141,7 @@ fn showStatistic m title:"Statistic" width: 320 =
 		
 	)
 
-	createDialog rStatistic width 315 modal: true
+	createDialog rStatistic width 315 modal: false
 )
 
 fn stripName n = (
@@ -357,7 +364,12 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	
 	timer tmrBoxTrick "" interval:100 active:false
 		
+	on _MAIN_SUBSTANCE_STEP1 open do (
+		freezeUi()
+	)
+	
 	fn msgDone = messageBox "Done!" title: "Done!" beep: false
+	fn msgNotFund = messageBox "Not found!" title: "Success!" beep: false
 		
 	fn getEmptyGroups = for o in helpers where isGroupHead o and o.children.count == 0 and not isDeleted o collect o
 	fn getEmptyObjects = for o in geometry where try((getNumFaces o) == 0)catch(false) collect o
@@ -392,28 +404,33 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	)
 	
 	fn selXFaces objs num: 3 = (
-		-- Select 3,4,5 and 6 - all other
+		sel = 0
 		for o in objs where classOf o.baseObject == Editable_Poly do (
+			if(canConvertTo o Editable_Poly) do convertToPoly o
 			o = o.baseObject
 			faces = #{1..(polyOp.getNumFaces o)}
 			ss = #{}
 			for f in faces do (
 				t = (polyOp.getVertsUsingFace o f).numberset
 				if(t == 0) do continue
-				if(t > 5) do t = 6
+				if(t > 4) do t = 5
 				if(t == num) do append ss f
 							
 				polyOp.setFaceSelection o ss
+				sel += ss.numberset				
 			)
+			boost()
 		)
 		
-		if subObjectLevel != 4 do subObjectLevel = 4
+		try(if subObjectLevel != 4 do subObjectLevel = 4) catch()
 		max views redraw
+		return sel
 	)
 	
 	fn selXVertices objs num: 3 = (
-		-- Select 3,4,5 and 6 - all other
+		sel = 0
 		for o in objs where classOf o.baseObject == Editable_Poly do (
+			if(canConvertTo o Editable_Poly) do convertToPoly o
 			o = o.baseObject
 			verts = #{1..(polyOp.getNumVerts o)}
 			ss = #{}
@@ -424,15 +441,17 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 				if(t == num) do append ss v
 							
 				polyOp.setVertSelection o ss
+				sel += ss.numberset
 			)
+			boost()
 		)
 		
-		if subObjectLevel != 1 do subObjectLevel = 1
+		try(if subObjectLevel != 1 do subObjectLevel = 1)catch()
 		max views redraw
+		return sel
 	)
 	
 	fn vertXCount objs num: 3 = (
-		-- Count 3,4,5 and 6 - all other
 		iVerts = 0
 		for o in objs where classOf o.baseObject == Editable_Poly do (
 			o = o.baseObject
@@ -444,13 +463,13 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 				if(t > 5) do t = 6
 				if(t == num) do iVerts += 1			
 			)
+			boost()
 		)
 		sVerts = iVerts as string
 		return numberSpaces sVerts
 	)
 	
 	fn polyXCount objs num: 3 = (
-		-- Count 3,4,5 and 6 - all other
 		iFaces = 0
 		for o in objs where classOf o.baseObject == Editable_Poly do (
 			o = o.baseObject
@@ -459,9 +478,10 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 			for f in faces do (
 				t = (polyOp.getVertsUsingFace o f).numberset
 				if(t == 0) do continue
-				if(t > 5) do t = 6
+				if(t > 4) do t = 5
 				if(t == num) do iFaces += 1			
 			)
+			boost()
 		)
 		sFaces = iFaces as string
 		return numberSpaces sFaces
@@ -566,18 +586,20 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		
 	
 	fn materialCount sel = (
-		iMat = 0	
+		materials = #()
 		for i in sel where i.material != undefined do (
 			m = i.material
 			if(classOf m == MultiMaterial) then (
-				for ii in m where ii != undefined do iMat += 1
+				for ii in m where ii != undefined do append materials m
 				continue
 			)
 			
-			iMat += 1
+			append materials m
 		)
 		
-		sMat = iMat as string
+		materials = makeUniqueArray materials
+		
+		sMat = materials.count as string
 		return sMat 
 	)
 	
@@ -592,15 +614,15 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		for i in sel where getUserProp i "xform" == undefined do bResetXForm = "No"
 				
 		n = "\n"
-		o = "Geometry" + n + n
+		o = "Geometry:" + n 
 		o += "Units: " + getUnits() + n
 		o += "Polygons: " + (polyCount sel) + n
 		o += "Vertex: " + (vertCount sel) + n
 		o += "Triangles: " + (polyXCount sel num: 3) + n
 		o += "Quads: " + (polyXCount sel num: 4) + n
 		o += "Ngons: " + (polyXCount sel num: 5) + n
-		o += "Vertex >5 edges: " + (vertXCount sel num: 6) + n + n
-		o += "Object" + n + n
+		o += "Vertex with more then 5 edges: " + (vertXCount sel num: 6) + n + n
+		o += "Object:" + n 
 		if(cbxInfoDimMM.checked) do o += "Dimenson mm: " + getDim $ type: "mm" + n
 		if(cbxInfoDimCM.checked) do o += "Dimenson cm: " + getDim $ type: "cm" + n
 		if(cbxInfoDimM.checked) do o += "Dimenson m: " + getDim $ type: "m" + n
@@ -618,19 +640,15 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		try(polyop.setFaceSelection o #{}) catch()
 		u = UVWunwrap()
 		addModifier o u
-		if subObjectLevel != 3 do subObjectLevel = 3
+		try(if subObjectLevel != 3 do subObjectLevel = 3)catch()
 		actionMan.executeAction 2077580866 "40183"	
 	)
 	
-	fn renderUVW o = (
-	
-		f = getSaveFileName caption: "Save UVW Render" types:"JPG(*.jpg)|*.jpg|PNG(*.png)|*.png"
-		if(f == undefined) do return false
-	
+	fn renderUVW o filename: "" = (
+		
 		if(canConvertTo o Editable_Poly) do convertToPoly o
 		u = UVWunwrap()
-		
-	
+			
 		addModifier o u		
 		u.renderuv_width = 2048
 		u.renderuv_height = 2048
@@ -645,7 +663,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		u.renderuv_seamedges = true
 		renderuv_showframebuffer = true
 	
-		u.renderUV f
+		u.renderUV filename
 	)
 	
 	fn selectObjectsByMat o = (
@@ -663,9 +681,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	fn makeGroup = (				
 		ungroupRecursive selection
 			
-		group selection name: (uniqueName "Group_") select:true
-		
-		msgDone()
+		group selection name: (uniqueName "Group_") select:true				
 	)
 	
 	fn setPivot p: #bottom =
@@ -708,8 +724,6 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		if(not isSelected()) do return false
 		
 		setPivot p: p
-			
-		msgDone()
 	)
 	
 	fn setToCenterScene = (
@@ -718,9 +732,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		g.pos = [0,0,0]
 		g.pos.z = 0 - selection.min.z
 			
-		ungroup g
-			
-		msgDone()
+		ungroup g		
 	)
 	
 	fn fixResetXForm = (
@@ -752,8 +764,6 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 			btnFixResetXForm.enabled = true
 			progressEnd()	
 		)
-		
-		msgDone()
 	)
 	
 	fn exportSelected types: #("obj") = (		
@@ -829,21 +839,24 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 				
 		
 		progressEnd()
-		msgDone()
 	)
 	
 	on btnFindTriangles pressed do (
 		if(not isSelectedEditPoly()) do return false
 		
 		objs = selection as array
-		selXFaces objs num: 3
+		sel = selXFaces objs num: 3
+			
+		if(sel == 0) do return msgNotFund()
 	)
 	
 	on btnFindNgons pressed do (
 		if(not isSelectedEditPoly()) do return false
 		
 		objs = selection as array
-		selXFaces objs num: 5
+		sel = selXFaces objs num: 5
+			
+		if(sel == 0) do return msgNotFund()
 	)
 	
 	on btnFindEdges5 pressed do (
@@ -851,7 +864,9 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		
 		objs = selection as array
 			
-		selXVertices objs num: 6
+		sel = selXVertices objs num: 6
+			
+		if(sel == 0) do return msgNotFund()
 	)
 	
 	on btnStatistic pressed do (
@@ -878,11 +893,24 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	)
 	
 	on btnRenderUVW pressed do (
-		if(not isSelectedEditPoly exact: 1) do return false
+		if(not isSelectedEditPoly()) do return false
+			
+		f = getSaveFileName caption: "Save UVW Render" types:"JPG(*.jpg)|*.jpg|PNG(*.png)|*.png" filename: "uvw"
+		if(f == undefined) do return false	
+			
+		p = getFileNamePath f
+		ext = getFilenameType f
+		n = getFilenameFile  f
+		sel = selection as array
+		clearSelection()
+			
+		for o in sel do (		
+			filename = p + o.name+ "_" + n + ext	
+			select o
+			renderUVW o filename: filename
+		)
 		
-		o = selection[1]
-		
-		renderUVW o
+		try(select sel) catch()
 	)
 	
 	on btnMakeGroup pressed do (
@@ -897,8 +925,6 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		objs = selection as array
 			
 		quickAttach objs
-			
-		msgDone()
 	)
 	
 	on btnSetPivotBottom pressed do setPivotPoint p: #bottom
