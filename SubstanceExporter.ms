@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.0.2
+VERSION = 1.1.1
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -31,6 +31,10 @@ ICON=#("PhysX_Main", 30)
 - BugFix: Fatal error when pressed button Triangles=
 + Added: Batch render UVW=
 * Changed: Small fixes=
+
+[1.1.1]
+
+-BugFix: Small fixes=
 
 [ABOUT]
 
@@ -404,6 +408,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	)
 	
 	fn selXFaces objs num: 3 = (
+		max modify mode 
 		sel = 0
 		for o in objs where classOf o.baseObject == Editable_Poly do (
 			if(canConvertTo o Editable_Poly) do convertToPoly o
@@ -421,16 +426,17 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 			)
 			boost()
 		)
-		
+		modPanel.addModToSelection (Edit_Poly ()) ui:on
 		try(if subObjectLevel != 4 do subObjectLevel = 4) catch()
 		max views redraw
 		return sel
 	)
 	
 	fn selXVertices objs num: 3 = (
+		max modify mode 
 		sel = 0
 		for o in objs where classOf o.baseObject == Editable_Poly do (
-			if(canConvertTo o Editable_Poly) do convertToPoly o
+			--if(canConvertTo o Editable_Poly) do convertToPoly o
 			o = o.baseObject
 			verts = #{1..(polyOp.getNumVerts o)}
 			ss = #{}
@@ -445,7 +451,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 			)
 			boost()
 		)
-		
+		modPanel.addModToSelection (Edit_Poly ()) ui:on
 		try(if subObjectLevel != 1 do subObjectLevel = 1)catch()
 		max views redraw
 		return sel
@@ -644,12 +650,15 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		actionMan.executeAction 2077580866 "40183"	
 	)
 	
-	fn renderUVW o filename: "" = (
+	fn renderUVW filename: "" = (
 		
-		if(canConvertTo o Editable_Poly) do convertToPoly o
+		--if(canConvertTo o Editable_Poly) do convertToPoly o
+		
 		u = UVWunwrap()
-			
-		addModifier o u		
+		
+		--modPanel.addModToSelection (Edit_Poly()) ui:off
+		modPanel.addModToSelection u ui:on
+					
 		u.renderuv_width = 2048
 		u.renderuv_height = 2048
 		u.renderuv_fillColor = color 186 186 186
@@ -664,6 +673,8 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		renderuv_showframebuffer = true
 	
 		u.renderUV filename
+		
+		try(for i in selection do deleteModifier i 1) catch()
 	)
 	
 	fn selectObjectsByMat o = (
@@ -782,7 +793,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		)
 		
 		s = getStatistic()
-		writeFile (p + n + ".txt") s
+		writeFile (p + "_" + n + ".txt") s
 		
 		shellLaunch p ""
 	)
@@ -843,7 +854,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	
 	on btnFindTriangles pressed do (
 		if(not isSelectedEditPoly()) do return false
-		
+			
 		objs = selection as array
 		sel = selXFaces objs num: 3
 			
@@ -894,7 +905,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	
 	on btnRenderUVW pressed do (
 		if(not isSelectedEditPoly()) do return false
-			
+					
 		f = getSaveFileName caption: "Save UVW Render" types:"JPG(*.jpg)|*.jpg|PNG(*.png)|*.png" filename: "uvw"
 		if(f == undefined) do return false	
 			
@@ -902,15 +913,10 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		ext = getFilenameType f
 		n = getFilenameFile  f
 		sel = selection as array
-		clearSelection()
-			
-		for o in sel do (		
-			filename = p + o.name+ "_" + n + ext	
-			select o
-			renderUVW o filename: filename
-		)
+							
+		--filename = --p + o.name+ "_" + n + ext	
 		
-		try(select sel) catch()
+		renderUVW filename: f				
 	)
 	
 	on btnMakeGroup pressed do (
