@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.1.1
+VERSION = 1.2.0
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -35,6 +35,10 @@ ICON=#("PhysX_Main", 30)
 [1.1.1]
 
 -BugFix: Small fixes=
+
+[1.2.0]
+
+* Changed: Fully changed select/get NGons, Edges >5 and Triangles=
 
 [ABOUT]
 
@@ -375,6 +379,10 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	fn msgDone = messageBox "Done!" title: "Done!" beep: false
 	fn msgNotFund = messageBox "Not found!" title: "Success!" beep: false
 		
+	fn selectBy name lvl type sel = (	
+		addModifier $ (Edit_Poly name: name); $.modifiers[name].setSelection type #{} ; subObjectLevel = lvl; $.modifiers[name].select type sel
+	)
+	
 	fn getEmptyGroups = for o in helpers where isGroupHead o and o.children.count == 0 and not isDeleted o collect o
 	fn getEmptyObjects = for o in geometry where try((getNumFaces o) == 0)catch(false) collect o
 	
@@ -407,6 +415,49 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		return (trimLeft r " ")
 	)
 	
+	fn findTriangles o = 
+	(	
+		max modify mode 
+		try(if subObjectLevel != 4 do subObjectLevel = 4)catch()
+		PolyToolsSelect.NumericFace 3 1 false
+		--max views redraw
+		
+		v = polyop.getFaceSelection o
+		return v.numberset
+	)
+	
+	fn findNGons o = 
+	(	
+		max modify mode 
+		try(if subObjectLevel != 4 do subObjectLevel = 4)catch()
+		PolyToolsSelect.NumericFace 5 3 false
+		--max views redraw
+		
+		v = polyop.getFaceSelection o	
+		return v.numberset	
+	)
+	
+	fn findQuads o = 
+	(	
+		max modify mode 
+		try(if subObjectLevel != 4 do subObjectLevel = 4)catch()
+		PolyToolsSelect.NumericFace 4 1 false
+		--max views redraw
+		
+		v = polyop.getFaceSelection o
+		return v.numberset	
+	)
+	
+	fn findEdges5 o = (		
+		max modify mode 
+		try(if subObjectLevel != 1 do subObjectLevel = 1)catch()
+		PolyToolsSelect.NumericVertex 5 3 false
+		max views redraw
+		
+		v = polyop.getVertSelection $		
+		return v.numberset
+	)
+	/*
 	fn selXFaces objs num: 3 = (
 		max modify mode 
 		sel = 0
@@ -491,7 +542,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		)
 		sFaces = iFaces as string
 		return numberSpaces sFaces
-	)
+	)*/
 		
 	fn getUnits = (
 		u = (trimLeft (units.SystemType as string) "#")
@@ -618,16 +669,44 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		
 		for i in sel where getUserProp i "boxtrick" == undefined do bBoxTrick = "No"
 		for i in sel where getUserProp i "xform" == undefined do bResetXForm = "No"
+		clearSelection()
+		
+		iTriangles = 0
+		iNgons = 0
+		iEdges5 = 0
+		iQuads = 0
+		
+		disableSceneRedraw()
+		for i in sel do (
+			select i
+			polyop.setFaceSelection i #{}
+			polyop.setVertSelection  i #{}
+			polyop.setEdgeSelection   i #{}
+			iTriangles += findTriangles i
+			iNgons += findNGons i
+			iEdges5 += findEdges5 i
+			iQuads += findQuads i	
+
+			polyop.setFaceSelection i #{}
+			polyop.setVertSelection  i #{}
+			polyop.setEdgeSelection   i #{}			
+		)
+		try(subObjectLevel = 0) catch()
+		try(select sel) catch()
+		
+		enableSceneRedraw()
+		enableSceneRedraw()
+		enableSceneRedraw()
 				
 		n = "\n"
 		o = "Geometry:" + n 
 		o += "Units: " + getUnits() + n
 		o += "Polygons: " + (polyCount sel) + n
 		o += "Vertex: " + (vertCount sel) + n
-		o += "Triangles: " + (polyXCount sel num: 3) + n
-		o += "Quads: " + (polyXCount sel num: 4) + n
-		o += "Ngons: " + (polyXCount sel num: 5) + n
-		o += "Vertex with more then 5 edges: " + (vertXCount sel num: 6) + n + n
+		o += "Triangles: " + (iTriangles as string) + n
+		o += "Quads: " + (iQuads as string) + n
+		o += "Ngons: " + (iNgons as string) + n
+		o += "Vertex with more then 5 edges: " + (iEdges5 as string) + n + n
 		o += "Object:" + n 
 		if(cbxInfoDimMM.checked) do o += "Dimenson mm: " + getDim $ type: "mm" + n
 		if(cbxInfoDimCM.checked) do o += "Dimenson cm: " + getDim $ type: "cm" + n
@@ -699,30 +778,17 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	(	
 		pm = MaxOps.pivotMode 
 		MaxOps.pivotMode = #pivotOnly
-		
-		--if(cbxOnePivotForAll.checked) then (
-			for i in selection as array do 
-			(	
-				i.pivot = selection.center			
-				pivotPoint = case p of
-				(
-					#bottom: i.pivot.z = selection.min.z
-					#top: i.pivot.z = selection.max.z
-				)					 
-			)
-		/*) else
-		(
-			for i in selection as array do 
-			(	
-				i.pivot = i.center			
-				pivotPoint = case p of
-				(
-					#bottom: i.pivot.z = i.min.z
-					#top: i.pivot.z = i.max.z				
-				)					 
-			)
-		)*/
-			
+	
+		for i in selection as array do 
+		(	
+			i.pivot = selection.center			
+			pivotPoint = case p of
+			(
+				#bottom: i.pivot.z = selection.min.z
+				#top: i.pivot.z = selection.max.z
+			)					 
+		)
+
 		max views redraw			
 			
 		MaxOps.pivotMode = pm
@@ -853,31 +919,24 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	)
 	
 	on btnFindTriangles pressed do (
-		if(not isSelectedEditPoly()) do return false
-			
-		objs = selection as array
-		sel = selXFaces objs num: 3
-			
-		if(sel == 0) do return msgNotFund()
+		if(not isSelectedEditPoly exact: 1) do return false
+		
+		findTriangles $
 	)
-	
+			
 	on btnFindNgons pressed do (
 		if(not isSelectedEditPoly()) do return false
 		
-		objs = selection as array
-		sel = selXFaces objs num: 5
+		c= findNGons $
 			
-		if(sel == 0) do return msgNotFund()
+		if(c == 0) do msgNotFund()	
 	)
 	
 	on btnFindEdges5 pressed do (
-		if(not isSelectedEditPoly()) do return false
+		if(not isSelectedEditPoly exact: 1) do return false
 		
-		objs = selection as array
-			
-		sel = selXVertices objs num: 6
-			
-		if(sel == 0) do return msgNotFund()
+		c = findEdges5 $
+		if(c == 0) do msgNotFund()
 	)
 	
 	on btnStatistic pressed do (
