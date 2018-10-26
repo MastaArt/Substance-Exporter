@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.2.1
+VERSION = 1.2.2
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -43,6 +43,10 @@ ICON=#("PhysX_Main", 30)
 [1.2.1]
 
 * Changed: Apply Edit_Poly modifier when select  NGons, Edges >5 and Triangles=
+
+[1.2.2]
+
+- BugFix: Small bug fixes=
 
 [ABOUT]
 
@@ -462,6 +466,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		addEditPoly n 4 #Face
 		PolyToolsSelect.NumericFace 4 1 false		
 		v = getEditPolySel n 1 #Vertex		
+		if(d) do delMod n
 		return v.numberset	
 	)
 	
@@ -938,7 +943,8 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	on btnFindTriangles pressed do (
 		if(not isSelectedEditPoly exact: 1) do return false
 		
-		findTriangles $
+		c = findTriangles $
+		if(c == 0) do msgNotFund()	
 	)
 			
 	on btnFindNgons pressed do (
