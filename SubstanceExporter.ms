@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.2.3
+VERSION = 1.2.4
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -51,6 +51,10 @@ ICON=#("PhysX_Main", 30)
 [1.2.3]
 
 * Changed: Delete Edit_Poly modifeirs if not found issues for  NGons, Edges >5 and Triangles=
+
+[1.2.4]
+
+- BugFix: Small bug fixes=
 
 [ABOUT]
 
@@ -394,7 +398,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	fn msgNotFund = messageBox "Not found!" title: "Success!" beep: false
 		
 	fn addEditPoly name lvl type = (	
-		--addModifier $ (Edit_Poly name: name); $.modifiers[name].setSelection type #{} ; subObjectLevel = lvl; $.modifiers[name].select type sel		
+		--addModifier $ (Edit_Poly name: name); $.modifiers[name].setSelection type #{} ; subObjectLevel = lvl; $.modifiers[name].select type sel				
 		addModifier $ (Edit_Poly name: name)
 		subObjectLevel = lvl
 		$.modifiers[name].setSelection type #{}
@@ -446,10 +450,11 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	fn findTriangles o d: false = 
 	(	
 		n = "Triangles"
+		t = #Face	
 		max modify mode 
-		addEditPoly n 4 #Vertex		
+		addEditPoly n 4 t	
 		PolyToolsSelect.NumericFace 3 1 false
-		v = getEditPolySel n 4 #Vertex
+		v = getEditPolySel n 4 t
 		if(d or v.numberset == 0) do delMod n 	
 		return v.numberset
 	)
@@ -457,10 +462,11 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	fn findNGons o d:false = 
 	(	
 		n = "Ngons"
+		t = #Face	
 		max modify mode 
-		addEditPoly n 4 #Face		
+		addEditPoly n 4 t
 		PolyToolsSelect.NumericFace 5 3 false		
-		v = getEditPolySel n 4 #Face
+		v = getEditPolySel n 4 t
 		if(d or v.numberset == 0) do delMod n 	
 		return v.numberset	
 	)
@@ -468,20 +474,22 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	fn findQuads o d: false = 
 	(	
 		n = "Quads"
+		t = #Face	
 		max modify mode 
-		addEditPoly n 4 #Face
+		addEditPoly n 4 t
 		PolyToolsSelect.NumericFace 4 1 false		
-		v = getEditPolySel n 1 #Vertex		
-		if(d) do delMod n
+		v = getEditPolySel n 1 t
+		if(d or v.numberset == 0) do delMod n 	
 		return v.numberset	
 	)
 	
 	fn findEdges5 o d: false= (		
 		n = "Edges >5"
+		t = #Vertex	
 		max modify mode 
-		addEditPoly n 1 #Vertex		
+		addEditPoly n 1 t	
 		PolyToolsSelect.NumericVertex 5 3 false			
-		v = getEditPolySel n 1 #Vertex				
+		v = getEditPolySel n 1 t			
 		if(d or v.numberset == 0) do delMod n 	
 		return v.numberset
 	)
