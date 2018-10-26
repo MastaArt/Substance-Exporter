@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.2.0
+VERSION = 1.2.1
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -39,6 +39,10 @@ ICON=#("PhysX_Main", 30)
 [1.2.0]
 
 * Changed: Fully changed select/get NGons, Edges >5 and Triangles=
+
+[1.2.1]
+
+* Changed: Apply Edit_Poly modifier when select  NGons, Edges >5 and Triangles=
 
 [ABOUT]
 
@@ -371,7 +375,9 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	)
 	
 	timer tmrBoxTrick "" interval:100 active:false
-		
+	
+	global nullArray = #{}
+	
 	on _MAIN_SUBSTANCE_STEP1 open do (
 		freezeUi()
 	)
@@ -379,10 +385,22 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	fn msgDone = messageBox "Done!" title: "Done!" beep: false
 	fn msgNotFund = messageBox "Not found!" title: "Success!" beep: false
 		
-	fn selectBy name lvl type sel = (	
-		addModifier $ (Edit_Poly name: name); $.modifiers[name].setSelection type #{} ; subObjectLevel = lvl; $.modifiers[name].select type sel
+	fn addEditPoly name lvl type = (	
+		--addModifier $ (Edit_Poly name: name); $.modifiers[name].setSelection type #{} ; subObjectLevel = lvl; $.modifiers[name].select type sel		
+		addModifier $ (Edit_Poly name: name)
+		subObjectLevel = lvl
+		$.modifiers[name].setSelection type #{}
 	)
 	
+	fn getEditPolySel name lvl type = (
+		subObjectLevel = lvl
+		$.modifiers[name].GetSelection type
+	)
+	
+	fn delMod name = (
+		deleteModifier $  $.modifiers[name]
+	)
+		
 	fn getEmptyGroups = for o in helpers where isGroupHead o and o.children.count == 0 and not isDeleted o collect o
 	fn getEmptyObjects = for o in geometry where try((getNumFaces o) == 0)catch(false) collect o
 	
@@ -415,46 +433,45 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		return (trimLeft r " ")
 	)
 	
-	fn findTriangles o = 
+	fn findTriangles o d: false = 
 	(	
+		n = "Triangles"
 		max modify mode 
-		try(if subObjectLevel != 4 do subObjectLevel = 4)catch()
+		addEditPoly n 4 #Vertex		
 		PolyToolsSelect.NumericFace 3 1 false
-		--max views redraw
-		
-		v = polyop.getFaceSelection o
+		v = getEditPolySel n 4 #Vertex
+		if(d) do delMod n 	
 		return v.numberset
 	)
 	
-	fn findNGons o = 
+	fn findNGons o d:false = 
 	(	
+		n = "Ngons"
 		max modify mode 
-		try(if subObjectLevel != 4 do subObjectLevel = 4)catch()
-		PolyToolsSelect.NumericFace 5 3 false
-		--max views redraw
-		
-		v = polyop.getFaceSelection o	
+		addEditPoly n 4 #Face		
+		PolyToolsSelect.NumericFace 5 3 false		
+		v = getEditPolySel n 4 #Face
+		if(d) do delMod n 
 		return v.numberset	
 	)
 	
-	fn findQuads o = 
+	fn findQuads o d: false = 
 	(	
+		n = "Quads"
 		max modify mode 
-		try(if subObjectLevel != 4 do subObjectLevel = 4)catch()
-		PolyToolsSelect.NumericFace 4 1 false
-		--max views redraw
-		
-		v = polyop.getFaceSelection o
+		addEditPoly n 4 #Face
+		PolyToolsSelect.NumericFace 4 1 false		
+		v = getEditPolySel n 1 #Vertex		
 		return v.numberset	
 	)
 	
-	fn findEdges5 o = (		
+	fn findEdges5 o d: false= (		
+		n = "Edges >5"
 		max modify mode 
-		try(if subObjectLevel != 1 do subObjectLevel = 1)catch()
-		PolyToolsSelect.NumericVertex 5 3 false
-		max views redraw
-		
-		v = polyop.getVertSelection $		
+		addEditPoly n 1 #Vertex		
+		PolyToolsSelect.NumericVertex 5 3 false			
+		v = getEditPolySel n 1 #Vertex				
+		if(d) do delMod n 
 		return v.numberset
 	)
 	/*
@@ -679,17 +696,17 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		disableSceneRedraw()
 		for i in sel do (
 			select i
-			polyop.setFaceSelection i #{}
-			polyop.setVertSelection  i #{}
-			polyop.setEdgeSelection   i #{}
-			iTriangles += findTriangles i
-			iNgons += findNGons i
-			iEdges5 += findEdges5 i
-			iQuads += findQuads i	
+			/*polyop.setFaceSelection $ #{}
+			polyop.setVertSelection  $ #{}
+			polyop.setEdgeSelection   $ #{}*/
+			iTriangles += findTriangles $ d: true
+			iNgons += findNGons $ d: true
+			iEdges5 += findEdges5 $ d: true
+			iQuads += findQuads $	d: true
 
-			polyop.setFaceSelection i #{}
-			polyop.setVertSelection  i #{}
-			polyop.setEdgeSelection   i #{}			
+			/*polyop.setFaceSelection $ #{}
+			polyop.setVertSelection  $ #{}
+			polyop.setEdgeSelection   $ #{}*/
 		)
 		try(subObjectLevel = 0) catch()
 		try(select sel) catch()
@@ -706,7 +723,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		o += "Triangles: " + (iTriangles as string) + n
 		o += "Quads: " + (iQuads as string) + n
 		o += "Ngons: " + (iNgons as string) + n
-		o += "Vertex with more then 5 edges: " + (iEdges5 as string) + n + n
+		o += "Vertex with more than 5 edges: " + (iEdges5 as string) + n + n
 		o += "Object:" + n 
 		if(cbxInfoDimMM.checked) do o += "Dimenson mm: " + getDim $ type: "mm" + n
 		if(cbxInfoDimCM.checked) do o += "Dimenson cm: " + getDim $ type: "cm" + n
