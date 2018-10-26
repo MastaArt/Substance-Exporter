@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.2.2
+VERSION = 1.2.3
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -47,6 +47,10 @@ ICON=#("PhysX_Main", 30)
 [1.2.2]
 
 - BugFix: Small bug fixes=
+
+[1.2.3]
+
+* Changed: Delete Edit_Poly modifeirs if not found issues for  NGons, Edges >5 and Triangles=
 
 [ABOUT]
 
@@ -437,6 +441,8 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		return (trimLeft r " ")
 	)
 	
+	/* ------------------------------------------- */
+	
 	fn findTriangles o d: false = 
 	(	
 		n = "Triangles"
@@ -444,7 +450,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		addEditPoly n 4 #Vertex		
 		PolyToolsSelect.NumericFace 3 1 false
 		v = getEditPolySel n 4 #Vertex
-		if(d) do delMod n 	
+		if(d or v.numberset == 0) do delMod n 	
 		return v.numberset
 	)
 	
@@ -455,7 +461,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		addEditPoly n 4 #Face		
 		PolyToolsSelect.NumericFace 5 3 false		
 		v = getEditPolySel n 4 #Face
-		if(d) do delMod n 
+		if(d or v.numberset == 0) do delMod n 	
 		return v.numberset	
 	)
 	
@@ -476,9 +482,12 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		addEditPoly n 1 #Vertex		
 		PolyToolsSelect.NumericVertex 5 3 false			
 		v = getEditPolySel n 1 #Vertex				
-		if(d) do delMod n 
+		if(d or v.numberset == 0) do delMod n 	
 		return v.numberset
 	)
+	
+	/* ------------------------------------------- */
+	
 	/*
 	fn selXFaces objs num: 3 = (
 		max modify mode 
