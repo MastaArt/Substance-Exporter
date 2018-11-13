@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.2.4
+VERSION = 1.2.5
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -55,6 +55,10 @@ ICON=#("PhysX_Main", 30)
 [1.2.4]
 
 - BugFix: Small bug fixes=
+
+[1.2.5]
+
+* Changed: Save FBX in 2009 file version=
 
 [ABOUT]
 
@@ -894,6 +898,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		n = getFileNameFile f
 			
 		for t in types do (
+			FbxExporterSetParam "FileVersion" "FBX200900"
 			exportFile (p + n + "." + t) #noPrompt selectedOnly:true
 		)
 		
