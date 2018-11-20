@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.2.5
+VERSION = 1.2.6
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -59,6 +59,11 @@ ICON=#("PhysX_Main", 30)
 [1.2.5]
 
 * Changed: Save FBX in 2009 file version=
+
+[1.2.7]
+
+- BugFix: Find NGons=
+
 
 [ABOUT]
 
@@ -469,7 +474,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		t = #Face	
 		max modify mode 
 		addEditPoly n 4 t
-		PolyToolsSelect.NumericFace 5 3 false		
+		PolyToolsSelect.NumericFace 4 3 false		
 		v = getEditPolySel n 4 t
 		if(d or v.numberset == 0) do delMod n 	
 		return v.numberset	
