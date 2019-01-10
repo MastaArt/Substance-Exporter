@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.2.8
+VERSION = 1.2.9
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -68,6 +68,10 @@ ICON=#("PhysX_Main", 30)
 
 + Added: - ins statistics =
 * Changed: Round  nums in statistics=
+
+[1.2.9]
+
+- BugFix: Floor to 2 after dot=
 
 
 [ABOUT]
@@ -632,34 +636,44 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	fn trim_null n f: false = (
 		a = filterString n "."
 		if(a.count < 2) do return n
+		
+		dd = trimLeft (n as string) "0123456789."
+		
 		-- Forse trim all nubers from right
 		if(f) do (
 			a[2] = trimLeft a[2] "0123456789"
 			return  a[1] + a[2]
 		)
 			
-		if((trimRight a[2] "'\"cm") == "0") do (
+		if((trimRight a[2] dd) == "0") do (
 			a[2] = trimLeft a[2] "0"
 			return  a[1] + a[2]
 		)
 		
 		return a[1] + "." + a[2]
 	)
-	
-	fn fixTo v t: 2 = (
-		t = 10.0 * t
-		return ((v * t) as integer / t)
-	)
-	
-	fn unitsDecode v = (
-		v[1] = units.formatValue v[1] 
-		v[2] = units.formatValue v[2]
-		v[3] = units.formatValue v[3] 
 		
-		return v
+	fn fixToText v t: 2 = (
+		v = v as string
+		dd = trimLeft v "0123456789."
+		nn = substituteString v dd ""
+		
+		nn = nn as float
+		
+		t = 10.0^t		
+		
+		return  (((nn * t) as integer / (t as float)) as string)  + dd
 	)
 	
-	fn floorArray a = for i in a collect floor i
+	fn fixToArray a t: 2 = (	
+		for i in a collect fixToText i t: t
+	)
+	
+	fn unitsDecode v = (		
+		for i in v collect units.formatValue i
+	)
+	
+	fn floorArray a = for i in a collect (floor i) as integer
 	
 	fn getDim s type: "m"=
 	(
@@ -688,9 +702,9 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		)
 		
 		d = s.max - s.min
-			
-		d = for i in 1 to 3 collect fixTo d[i] t: 2
 		
+		d = #(d[1], d[2], d[3])
+			
 		-- Floor the mm and cm
 		case type of (
 			"mm": d = floorArray d				
@@ -699,6 +713,8 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		
 		d = unitsDecode d
 		
+		d = fixToArray d t: 2
+		
 		-- Trim 00 from right pos of value
 		for i in 1 to 3 do (
 			case type of (
@@ -706,7 +722,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 				default: d[i] = trim_null d[i] f: false
 			)
 		)
-		
+				
 		units.DisplayType = t1 
 		units.MetricType = t2
 		units.USType = t3
