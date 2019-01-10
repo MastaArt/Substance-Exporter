@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.2.6
+VERSION = 1.2.8
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -63,6 +63,11 @@ ICON=#("PhysX_Main", 30)
 [1.2.7]
 
 - BugFix: Find NGons=
+
+[1.2.8]
+
++ Added: - ins statistics =
+* Changed: Round  nums in statistics=
 
 
 [ABOUT]
@@ -627,6 +632,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	fn trim_null n f: false = (
 		a = filterString n "."
 		if(a.count < 2) do return n
+		-- Forse trim all nubers from right
 		if(f) do (
 			a[2] = trimLeft a[2] "0123456789"
 			return  a[1] + a[2]
@@ -639,6 +645,21 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		
 		return a[1] + "." + a[2]
 	)
+	
+	fn fixTo v t: 2 = (
+		t = 10.0 * t
+		return ((v * t) as integer / t)
+	)
+	
+	fn unitsDecode v = (
+		v[1] = units.formatValue v[1] 
+		v[2] = units.formatValue v[2]
+		v[3] = units.formatValue v[3] 
+		
+		return v
+	)
+	
+	fn floorArray a = for i in a collect floor i
 	
 	fn getDim s type: "m"=
 	(
@@ -667,16 +688,21 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		)
 		
 		d = s.max - s.min
+			
+		d = for i in 1 to 3 collect fixTo d[i] t: 2
 		
-		d = for i in 1 to 3 collect ((d[i] * 100) as integer / 100.0 )
+		-- Floor the mm and cm
+		case type of (
+			"mm": d = floorArray d				
+			"cm": d = floorArray d				
+		)
 		
-		d[1] = units.formatValue d[1] 
-		d[2] = units.formatValue d[2]
-		d[3] = units.formatValue d[3] 
+		d = unitsDecode d
 		
+		-- Trim 00 from right pos of value
 		for i in 1 to 3 do (
 			case type of (
-				"mm":  d[i] = trim_null d[i] f: true					
+				"mm": d[i] = trim_null d[i] f: true									
 				default: d[i] = trim_null d[i] f: false
 			)
 		)
@@ -748,22 +774,22 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 				
 		n = "\n"
 		o = "Geometry:" + n 
-		o += "Units: " + getUnits() + n
-		o += "Polygons: " + (polyCount sel) + n
-		o += "Vertex: " + (vertCount sel) + n
-		o += "Triangles: " + (iTriangles as string) + n
-		o += "Quads: " + (iQuads as string) + n
-		o += "Ngons: " + (iNgons as string) + n
-		o += "Vertex with more than 5 edges: " + (iEdges5 as string) + n + n
+		o += "- Units: " + getUnits() + n
+		o += "- Polygons: " + (polyCount sel) + n
+		o += "- Vertex: " + (vertCount sel) + n
+		o += "- Triangles: " + (iTriangles as string) + n
+		o += "- Quads: " + (iQuads as string) + n
+		o += "- Ngons: " + (iNgons as string) + n
+		o += "- Vertex with more than 5 edges: " + (iEdges5 as string) + n + n
 		o += "Object:" + n 
-		if(cbxInfoDimMM.checked) do o += "Dimenson mm: " + getDim $ type: "mm" + n
-		if(cbxInfoDimCM.checked) do o += "Dimenson cm: " + getDim $ type: "cm" + n
-		if(cbxInfoDimM.checked) do o += "Dimenson m: " + getDim $ type: "m" + n
-		if(cbxInfoDimInch.checked) do o += "Dimenson inches: " + getDim $ type: "inches" + n
-		o += "Model parts: " + (selection.count as string) + n
-		o += "Material count: " + (materialCount sel) + n
-		o += "XForm: " + bResetXForm + n
-		o += "BoxTrick: " + bBoxTrick + n
+		if(cbxInfoDimMM.checked) do o += "- Dimenson mm: " + getDim $ type: "mm" + n
+		if(cbxInfoDimCM.checked) do o += "- Dimenson cm: " + getDim $ type: "cm" + n
+		if(cbxInfoDimM.checked) do o += "- Dimenson m: " + getDim $ type: "m" + n
+		if(cbxInfoDimInch.checked) do o += "- Dimenson inches: " + getDim $ type: "inches" + n
+		o += "- Model parts: " + (selection.count as string) + n
+		o += "- Material count: " + (materialCount sel) + n
+		o += "- XForm: " + bResetXForm + n
+		o += "- BoxTrick: " + bBoxTrick + n
 		
 		return o
 	)
