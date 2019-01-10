@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.3.1
+VERSION = 1.3.5
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -81,7 +81,15 @@ ICON=#("PhysX_Main", 30)
 
 - BugFix: Small dimesions fix in statistics=
 
+[1.3.2]
 
+* Changed: Stiatistcs mm show detailed=
+
+[1.3.5]
+
+* Changed: Button OBJ+FBX+3DS changed to OBJ+FBX=
++ Added: Button set pivot to center=
++ Added: Checkbox save or not info.txt=
 
 [ABOUT]
 
@@ -93,7 +101,7 @@ Quick export and check models for Substance Painter =
 */	
 
 try(closeRolloutFloater rSubstanceExporter)catch()
-global rSubstanceExporter = newRolloutFloater "Substance Exporter" 260 560
+global rSubstanceExporter = newRolloutFloater "Substance Exporter" 260 585
 
 global _MAIN_SUBSTANCE_STEP1
 global BitmapTypes = #(Bitmaptexture, CoronaBitmap)
@@ -390,9 +398,9 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	)
 	
 	group "5. Set Pivot" (
-		button btnSetPivotBottom "Bottom" across: 3 align: #left width: 85 height: 23
-		label lblOr2 "or" align: #center offset: [0, 4]
-		button btnSetPivotTop "Top" align: #right width: 85 height: 23
+		button btnSetPivotBottom "Bottom" across: 3 align: #left width: 70 height: 23
+		button btnSetPivotCenter "Center" align: #center width: 70 height: 23
+		button btnSetPivotTop "Top" align: #right width: 70 height: 23				
 	)
 	
 	group "6. Positon" (
@@ -403,7 +411,9 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		button btnExportOBJ "OBJ" across: 4 height: 23 align: #left width: 38 
 		button btnExportFBX "FBX" height: 23 align: #left offset: [-12, 0] width: 38 
 		button btnExport3DS "3DS" height: 23 align: #left offset: [-24, 0] width: 38 
-		button btnExportAll "OBJ+FBX" height: 23 align: #right width: 85
+		button btnExportAll "OBJ+FBX" height: 23 align: #right width: 90
+		
+		checkbox cbxSaveInfoTxt "Save info.txt" checked: true
 	)
 	
 	group "info.txt" (
@@ -719,18 +729,20 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 			"mm": d = floorArray d				
 			"cm": d = floorArray d				
 		)
-		
+				
 		d = unitsDecode d
-		
+				
 		d = fixToArray d t: 2
-		
+				
 		-- Trim 00 from right pos of value
 		for i in 1 to 3 do (
 			case type of (
-				"mm": d[i] = trim_null d[i] f: true									
+				"mm": d[i] = trim_null d[i] f: false									
 				default: d[i] = trim_null d[i] f: false
 			)
 		)
+		
+		print d[3]
 				
 		units.DisplayType = t1 
 		units.MetricType = t2
@@ -958,8 +970,10 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 			exportFile (p + n + "." + t) #noPrompt selectedOnly:true
 		)
 		
-		s = getStatistic()
-		writeFile (p + "_" + n + ".txt") s
+		if(cbxSaveInfoTxt.checked) do (
+			s = getStatistic()
+			writeFile (p + "_" + n + ".txt") s
+		)
 		
 		shellLaunch p ""
 	)
@@ -1095,6 +1109,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	
 	on btnSetPivotBottom pressed do setPivotPoint p: #bottom
 	on btnSetPivotTop pressed do setPivotPoint p: #top
+	on btnSetPivotCenter pressed do setPivotPoint p: #center
 		
 	on btnPositionCenter pressed do (
 		if(not isSelected()) do return false	
