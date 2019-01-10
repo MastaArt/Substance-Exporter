@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.3.0
+VERSION = 1.3.1
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -76,6 +76,11 @@ ICON=#("PhysX_Main", 30)
 [1.3.0]
 
 * Changed: Remove spaces for Polygons, Tis, Quads=
+
+[1.3.1]
+
+- BugFix: Small dimesions fix in statistics=
+
 
 
 [ABOUT]
@@ -398,7 +403,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		button btnExportOBJ "OBJ" across: 4 height: 23 align: #left width: 38 
 		button btnExportFBX "FBX" height: 23 align: #left offset: [-12, 0] width: 38 
 		button btnExport3DS "3DS" height: 23 align: #left offset: [-24, 0] width: 38 
-		button btnExportAll "OBJ+FBX+3DS" height: 23 align: #right
+		button btnExportAll "OBJ+FBX" height: 23 align: #right width: 85
 	)
 	
 	group "info.txt" (
@@ -677,7 +682,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		for i in v collect units.formatValue i
 	)
 	
-	fn floorArray a = for i in a collect (floor i) as integer
+	fn floorArray a = for i in a collect if(i > 1.0) then floor i else i
 	
 	fn getDim s type: "m"=
 	(
@@ -708,7 +713,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		d = s.max - s.min
 		
 		d = #(d[1], d[2], d[3])
-			
+		
 		-- Floor the mm and cm
 		case type of (
 			"mm": d = floorArray d				
@@ -962,7 +967,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 	on btnExportOBJ pressed do exportSelected types: #("obj")
 	on btnExportFBX pressed do exportSelected types: #("fbx")
 	on btnExport3DS pressed do exportSelected types: #("3ds")
-	on btnExportAll pressed do exportSelected types: #("obj", "fbx", "3ds")
+	on btnExportAll pressed do exportSelected types: #("obj", "fbx"/*, "3ds"*/)
 	
 	on tmrBoxTrick tick do
 	(		
