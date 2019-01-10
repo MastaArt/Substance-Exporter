@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.2.9
+VERSION = 1.3.0
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -72,6 +72,10 @@ ICON=#("PhysX_Main", 30)
 [1.2.9]
 
 - BugFix: Floor to 2 after dot=
+
+[1.3.0]
+
+* Changed: Remove spaces for Polygons, Tis, Quads=
 
 
 [ABOUT]
@@ -614,7 +618,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		for i in a do iPoly += i						
 			
 		sPoly = iPoly as string		
-		return numberSpaces sPoly
+		return sPoly
 	)
 	
 	fn vertCount s = (
@@ -622,7 +626,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		a = for i in s where superClassOf i == GeometryClass collect (getNumVerts i.baseObject.mesh)
 		for i in a do iVert += i
 		sVert = iVert as string		
-		return numberSpaces sVert	
+		return sVert	
 	)
 	
 	fn triCount s = (
@@ -630,7 +634,7 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		a = for i in s where superClassOf i == GeometryClass collect (GetTriMeshFaceCount i)[1]
 		for i in a do iTri += i
 		sTri = iTri as string		
-		return numberSpaces sTri	
+		return sTri	
 	)
 	
 	fn trim_null n f: false = (
