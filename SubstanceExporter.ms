@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.3.5
+VERSION = 1.3.6
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -90,6 +90,10 @@ ICON=#("PhysX_Main", 30)
 * Changed: Button OBJ+FBX+3DS changed to OBJ+FBX=
 + Added: Button set pivot to center=
 + Added: Checkbox save or not info.txt=
+
+[1.3.6]
+
+- BugFix: Fixed rounding dimensions in statistics=
 
 [ABOUT]
 
@@ -672,20 +676,65 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		return a[1] + "." + a[2]
 	)
 		
-	fn fixToText v t: 2 = (
+	
+	fn parseNum v = (
 		v = v as string
 		dd = trimLeft v "0123456789."
 		nn = substituteString v dd ""
 		
-		nn = nn as float
+		return #(nn as float, dd)
+	)
+	
+	fn round v = (
+		v = v as float
+		i = (v as integer) as float
+		
+		if(v - i >= 0.5) do return ceil v
+		return floor v
+	)
+	
+	fn fixToText v t: 2 = (
+		j = parseNum v
+		
+		nn = j[1]
+		dd = j[2]
 		
 		t = 10.0^t		
 		
-		return  (((nn * t) as integer / (t as float)) as string)  + dd
+		return  (((nn * t) as integer / (t as float)) as string) + dd
+	)
+	
+	fn fixTo v t: 0 = (
+		t = 10.0^t
+		return  ((v * t) as integer) / (t as float)
+	)
+	
+	fn floorTextArray a p: 0= (
+		out = #()
+		
+		for i in a do (
+			j = parseNum i
+			nn = j[1]
+			dd = j[2]
+			
+			t = 10.0^p
+			nn = ((nn * t) ) as float
+			if(nn > 1.0) do nn = round nn
+			
+			nn = nn / t
+			
+			append out ((nn as string) + dd)
+		)
+		
+		return out
 	)
 	
 	fn fixToArray a t: 2 = (	
 		for i in a collect fixToText i t: t
+	)
+	
+	fn trimNullArray a f: false = (	
+		for i in a collect  trim_null i f: f
 	)
 	
 	fn unitsDecode v = (		
@@ -723,26 +772,22 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		d = s.max - s.min
 		
 		d = #(d[1], d[2], d[3])
+						
+		d = unitsDecode d
 		
 		-- Floor the mm and cm
 		case type of (
-			"mm": d = floorArray d				
-			"cm": d = floorArray d				
+			"mm": d = floorTextArray d p: 0				
+			"cm": d = floorTextArray d p: 1 				
+			"m": d = floorTextArray d p: 2			
+			"inches": d = floorTextArray d p: 2			
 		)
-				
-		d = unitsDecode d
-				
+		
 		d = fixToArray d t: 2
 				
 		-- Trim 00 from right pos of value
-		for i in 1 to 3 do (
-			case type of (
-				"mm": d[i] = trim_null d[i] f: false									
-				default: d[i] = trim_null d[i] f: false
-			)
-		)
+		d = trimNullArray d f: false
 		
-		print d[3]
 				
 		units.DisplayType = t1 
 		units.MetricType = t2
