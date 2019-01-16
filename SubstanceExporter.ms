@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.3.6
+VERSION = 1.3.7
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -94,6 +94,12 @@ ICON=#("PhysX_Main", 30)
 [1.3.6]
 
 - BugFix: Fixed rounding dimensions in statistics=
+
+
+[1.3.7]
+
+- BugFix: Grammatical errors=
+
 
 [ABOUT]
 
@@ -864,10 +870,10 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		o += "- Ngons: " + (iNgons as string) + n
 		o += "- Vertex with more than 5 edges: " + (iEdges5 as string) + n + n
 		o += "Object:" + n 
-		if(cbxInfoDimMM.checked) do o += "- Dimenson mm: " + getDim $ type: "mm" + n
-		if(cbxInfoDimCM.checked) do o += "- Dimenson cm: " + getDim $ type: "cm" + n
-		if(cbxInfoDimM.checked) do o += "- Dimenson m: " + getDim $ type: "m" + n
-		if(cbxInfoDimInch.checked) do o += "- Dimenson inches: " + getDim $ type: "inches" + n
+		if(cbxInfoDimMM.checked) do o += "- Dimension mm: " + getDim $ type: "mm" + n
+		if(cbxInfoDimCM.checked) do o += "- Dimension cm: " + getDim $ type: "cm" + n
+		if(cbxInfoDimM.checked) do o += "- Dimension m: " + getDim $ type: "m" + n
+		if(cbxInfoDimInch.checked) do o += "- Dimension inches: " + getDim $ type: "inches" + n
 		o += "- Model parts: " + (selection.count as string) + n
 		o += "- Material count: " + (materialCount sel) + n
 		o += "- XForm: " + bResetXForm + n
