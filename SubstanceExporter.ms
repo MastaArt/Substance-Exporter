@@ -2,7 +2,7 @@
 [INFO] 
 
 NAME = Substance Exporter
-VERSION = 1.3.7
+VERSION = 1.3.8
 AUTHOR = Vasily Lukyanenko
 DEV = 3DGROUND
 CUSTOMER = Astics Aivis
@@ -99,6 +99,10 @@ ICON=#("PhysX_Main", 30)
 [1.3.7]
 
 - BugFix: Grammatical errors=
+
+[1.3.8]
+
+- BugFix: New FBX settins: Binary, 2020, Embed Media=
 
 
 [ABOUT]
@@ -1017,7 +1021,10 @@ rollout _MAIN_SUBSTANCE_STEP1 "Main"
 		n = getFileNameFile f
 			
 		for t in types do (
-			FbxExporterSetParam "FileVersion" "FBX200900"
+			FBXExporterSetParam "ASCII" false
+			FbxExporterSetParam "FileVersion" #FBX202000
+			FBXExporterSetParam "EmbedTextures" true
+			
 			exportFile (p + n + "." + t) #noPrompt selectedOnly:true
 		)
 		
